@@ -7,6 +7,7 @@ Parte 1: versão BASELINE do sistema de venda de passagens aéreas, sem tolerân
 ## Equipe
 - Cristovão Lacerda Cronje
 - Matheus Gabriel Souto de Lira Freitas
+- Tiago Rodrigues dos Santos
 
 ## Linguagem e framework
 - **IMDTravel**: TypeScript + [NestJS 12](https://nestjs.com) (Node.js 24), em [`imd-travel/`](imd-travel/), no padrão controller + service:
