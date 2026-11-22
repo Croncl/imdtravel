@@ -256,7 +256,7 @@ secao "4. Preço determinístico e taxa estável entre dois ticks"
 P1="$(interno airlineshub "/flight?flight=$VOO&day=$DIA" | jq -r .priceUSD)"
 P2="$(interno airlineshub "/flight?flight=$VOO&day=$DIA" | jq -r .priceUSD)"
 confere "duas consultas ao mesmo par dão o mesmo preço" "$P2" "$P1"
-confere "a compra usou esse preço" "$(jq -r .valueUSD "$TMP/c1.json")" "$P1"
+confere_jq "a compra usou esse preço" ".valueUSD == $P1" "$TMP/c1.json"
 interno exchange /convert > "$TMP/x1.json"; interno exchange /convert > "$TMP/x2.json"
 if [ "$(jq -r .asOf "$TMP/x1.json")" = "$(jq -r .asOf "$TMP/x2.json")" ]; then
     confere "duas leituras com o mesmo asOf têm a mesma taxa" "$(jq -r .rate "$TMP/x2.json")" "$(jq -r .rate "$TMP/x1.json")"
