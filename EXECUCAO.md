@@ -130,8 +130,8 @@ Com o sistema no ar, na raiz do repositório:
 ```
 
 Termina com `Resumo: N passaram, 0 falharam`. O guia completo — testes manuais com `curl`,
-o que cada seção do `testes.sh` verifica, como ler uma falha, variáveis de ambiente e testes
-unitários — está em **[Como testar](TESTES.md)**.
+o que cada seção do `testes.sh` verifica, como ler uma falha e variáveis de ambiente — está em
+**[Como testar](TESTES.md)**.
 
 ---
 

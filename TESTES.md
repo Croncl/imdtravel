@@ -1,13 +1,12 @@
 # IMDTravel — como testar
 
-Três formas de conferir que o sistema faz o que a
+Duas formas de conferir que o sistema faz o que a
 [especificação da Parte 1](docs/parte1-especificacao.md) pede:
 
 | Forma | Para quê | Tempo |
 |---|---|---|
 | [Testes manuais com `curl`](#1-testes-manuais-com-curl) | Entender cada serviço, uma requisição por vez | — |
 | [`testes.sh`](#2-o-script-testessh) | Verificar o sistema inteiro, de fora, com um comando | ~10 s |
-| [Testes unitários](#3-testes-unitários) | Verificar a lógica de cada serviço, sem subir containers | ~1 min |
 
 Todas partem do sistema no ar. Para instalar o ambiente e subir os serviços, veja
 [Como executar](EXECUCAO.md).

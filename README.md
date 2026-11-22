@@ -40,5 +40,4 @@ curl -H 'Content-Type: application/json' -d '{"flight":"IMD100","day":"2026-12-0
 Taxa de câmbio inicial 5,50, variação de até ±0,3% a cada 10 s, entre 5,00 e 6,00.
 
 ## Testes realizados
-- Unitário: `cd imd-travel && pnpm test` (ordem das 4 chamadas, cálculo de BRL e bônus).
 - Funcional: `./testes.sh --com-falhas` — saída em [`tests/testes-com-falhas.txt`](tests/testes-com-falhas.txt), logs em [`tests/docker-compose-logs.txt`](tests/docker-compose-logs.txt).
