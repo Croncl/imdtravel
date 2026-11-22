@@ -28,10 +28,7 @@ export class TicketsController {
     const { flight, day, user } = body ?? {};
 
     if (!flight || !day || !user) {
-      throw new HttpException(
-        { error: 'flight, day e user são obrigatórios' },
-        400,
-      );
+      throw new HttpException({ error: 'invalid-request' }, 400);
     }
 
     try {
