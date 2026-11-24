@@ -1,0 +1,44 @@
+# Evidências — BASELINE sob injeção de falhas
+# Projeto: IMDTravel — Parte 2
+# Data: 23-11-2026
+#
+# O IMDTravel da tag BASELINE foi executado sem nenhuma alteração,
+# com as dependências na versão :parte2 (injeção de falhas habilitada).
+# Cada falha foi ativada isoladamente com probabilidade 1 (p=1)
+# e janela de 15 segundos, e uma requisição POST /buyTicket foi enviada.
+# Os resultados abaixo documentam o comportamento observado.
+
+== Falha 1: Tempo — GET /flight
+Configuração: FAULT_FLIGHT_P=1, FAULT_FLIGHT_TTL_SEC=15
+Resposta obtida: HTTP 201 — compra aparentemente bem-sucedida
+Tempo de resposta: 15426ms (limite exigido pela Parte 2: 5000ms)
+Comportamento observado: a requisição ficou bloqueada durante toda a janela
+de falha, pois o IMDTravel não possui timeout configurado. A resposta só chegou
+após a dependência liberar a conexão.
+
+== Falha 2: Resposta — GET /convert
+Configuração: FAULT_CONVERT_P=1, FAULT_CONVERT_TTL_SEC=15
+Resposta obtida: HTTP 201
+Tempo de resposta: 778ms
+Corpo: {"rate":"abc","valueBRL":null,...}
+Comportamento observado: o IMDTravel não valida o valor retornado pelo Exchange.
+A taxa inválida ("abc") foi aceita e a venda foi gravada em /sales com
+valueBRL nulo, corrompendo o registro local.
+
+== Falha 3: Omissão — POST /sell
+Configuração: FAULT_SELL_P=1, FAULT_SELL_TTL_SEC=15
+Resposta obtida: HTTP 500 — "socket hang up"
+Tempo de resposta: 15061ms
+Comportamento observado: o AirlinesHub consumiu o assento mas não devolveu
+resposta. O IMDTravel ficou aguardando indefinidamente até a conexão ser
+encerrada, retornando erro ao cliente. O assento foi perdido sem registro
+de venda, gerando estado inconsistente.
+
+== Falha 4: Crash — POST /bonus (Fidelity)
+Configuração: FAULT_BONUS_P=1, FAULT_BONUS_TTL_SEC=15
+Resposta obtida: HTTP 500 — "socket hang up"
+Tempo de resposta: 451ms
+Comportamento observado: o Fidelity ficou fora do ar e o IMDTravel retornou
+erro imediatamente, cancelando a compra. O bônus é um serviço não-essencial,
+mas sua falha foi suficiente para derrubar toda a transação, incluindo a
+venda do assento que já havia sido processada.
