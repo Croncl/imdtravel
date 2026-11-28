@@ -1,0 +1,77 @@
+
+== A1. P1 com o AirlinesHub pausado
+  compra 1: HTTP 503 em  1010ms  {"error":"dependência indisponível","dependency":"flight","reason":"timeout"}
+  ok pausado #1 respondeu antes de 5000ms
+  compra 2: HTTP 503 em  1007ms  {"error":"dependência indisponível","dependency":"flight","reason":"timeout"}
+  ok pausado #2 respondeu antes de 5000ms
+
+== A2. P1 sob cada falha isolada
+  -- tempo (FAULT_FLIGHT_P=1 FAULT_FLIGHT_TTL_SEC=15)
+  compra 1: HTTP 503 em  1017ms  {"error":"dependência indisponível","dependency":"flight","reason":"timeout"}
+  ok tempo #1 respondeu antes de 5000ms
+  compra 2: HTTP 503 em  1004ms  {"error":"dependência indisponível","dependency":"flight","reason":"timeout"}
+  ok tempo #2 respondeu antes de 5000ms
+  compra 3: HTTP 503 em  1005ms  {"error":"dependência indisponível","dependency":"flight","reason":"timeout"}
+  ok tempo #3 respondeu antes de 5000ms
+  -- omissao (FAULT_SELL_P=1 FAULT_SELL_TTL_SEC=15)
+  compra 1: HTTP 503 em  2121ms  {"error":"dependência indisponível","dependency":"sell","reason":"timeout"}
+  ok omissao #1 respondeu antes de 5000ms
+  compra 2: HTTP 503 em  2023ms  {"error":"dependência indisponível","dependency":"sell","reason":"timeout"}
+  ok omissao #2 respondeu antes de 5000ms
+  compra 3: HTTP 503 em  2011ms  {"error":"dependência indisponível","dependency":"sell","reason":"timeout"}
+  ok omissao #3 respondeu antes de 5000ms
+  -- resposta (FAULT_CONVERT_P=1 FAULT_CONVERT_TTL_SEC=0)
+  compra 1: HTTP 201 em   793ms  {"transactionId":"a316969f-d000-45f4-a55f-4517b7d14ec0","degraded":null}
+  ok resposta #1 respondeu antes de 5000ms
+  compra 2: HTTP 201 em   921ms  {"transactionId":"54bf5042-e85a-4128-8534-6f60fa65dbcf","degraded":null}
+  ok resposta #2 respondeu antes de 5000ms
+  compra 3: HTTP 201 em   652ms  {"transactionId":"d0fefd98-38df-4eb3-94b1-d054f80f5629","degraded":null}
+  ok resposta #3 respondeu antes de 5000ms
+  -- crash (FAULT_BONUS_P=1 FAULT_BONUS_TTL_SEC=15)
+  compra 1: HTTP 503 em   579ms  {"error":"dependência indisponível","dependency":"bonus","reason":"unavailable"}
+  ok crash #1 respondeu antes de 5000ms
+  compra 2: HTTP 503 em   873ms  {"error":"dependência indisponível","dependency":"bonus","reason":"unavailable"}
+  ok crash #2 respondeu antes de 5000ms
+  compra 3: HTTP 503 em   646ms  {"error":"dependência indisponível","dependency":"bonus","reason":"unavailable"}
+  ok crash #3 respondeu antes de 5000ms
+
+== A3. P1 com as quatro falhas juntas
+  compra 1: HTTP 503 em  1017ms  {"error":"dependência indisponível","dependency":"flight","reason":"timeout"}
+  ok todas #1 respondeu antes de 5000ms
+  compra 2: HTTP 503 em  1002ms  {"error":"dependência indisponível","dependency":"flight","reason":"timeout"}
+  ok todas #2 respondeu antes de 5000ms
+  compra 3: HTTP 503 em  1003ms  {"error":"dependência indisponível","dependency":"flight","reason":"timeout"}
+  ok todas #3 respondeu antes de 5000ms
+
+== B. P7 com o /flight em falha contínua (Tempo, p=1, ttlSec=15)
+  compra  1: HTTP 503 em  1011ms  {"error":"dependência indisponível","dependency":"flight","reason":"timeout"}
+  ok p7 #1 respondeu antes de 5000ms
+  compra  2: HTTP 503 em  1010ms  {"error":"dependência indisponível","dependency":"flight","reason":"timeout"}
+  ok p7 #2 respondeu antes de 5000ms
+  compra  3: HTTP 503 em  1003ms  {"error":"dependência indisponível","dependency":"flight","reason":"timeout"}
+  ok p7 #3 respondeu antes de 5000ms
+  compra  4: HTTP 503 em  1004ms  {"error":"dependência indisponível","dependency":"flight","reason":"timeout"}
+  ok p7 #4 respondeu antes de 5000ms
+  compra  5: HTTP 503 em  1002ms  {"error":"dependência indisponível","dependency":"flight","reason":"timeout"}
+  ok p7 #5 respondeu antes de 5000ms
+  compra  6: HTTP 503 em     1ms  {"error":"dependência indisponível","dependency":"flight","reason":"circuit-open"}
+  ok p7 #6 respondeu antes de 5000ms
+  compra  7: HTTP 503 em     2ms  {"error":"dependência indisponível","dependency":"flight","reason":"circuit-open"}
+  ok p7 #7 respondeu antes de 5000ms
+  compra  8: HTTP 503 em     1ms  {"error":"dependência indisponível","dependency":"flight","reason":"circuit-open"}
+  ok p7 #8 respondeu antes de 5000ms
+  compra  9: HTTP 503 em     1ms  {"error":"dependência indisponível","dependency":"flight","reason":"circuit-open"}
+  ok p7 #9 respondeu antes de 5000ms
+  compra 10: HTTP 503 em     1ms  {"error":"dependência indisponível","dependency":"flight","reason":"circuit-open"}
+  ok p7 #10 respondeu antes de 5000ms
+  ok B1. com o breaker aberto, as compras 6–10 responderam em < 2500ms
+  compras que chegaram ao /flight do AirlinesHub: 5 de 10
+  ok B2. no máximo 5 das 10 compras chegaram ao AirlinesHub
+  ok B2. o log do IMDTravel registou cb.open do flight
+  -- desliga a falha (só o AirlinesHub; o IMDTravel continua com o breaker aberto)
+  -- espera 11s (CB_RESET_TIMEOUT_MS)
+  compra de volta: HTTP 201 em 1106ms  {"transactionId":"5a68d53b-d1be-4da8-9735-caac023b4955","degraded":null}
+  ok B3. a compra voltou a dar 201 sem intervenção
+  ok B3. o breaker do flight fechou sozinho (cb.close no log)
+
+== Resumo: 32 passaram, 0 falharam
