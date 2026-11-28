@@ -1,0 +1,85 @@
+
+== A1. P2 — /convert sempre errado (FAULT_CONVERT_P=1 FAULT_CONVERT_TTL_SEC=0)
+  compra  1: HTTP 503 em    76ms  {"dependency":"convert","reason":"invalid-response"}
+  compra  2: HTTP 503 em     8ms  {"dependency":"convert","reason":"invalid-response"}
+  compra  3: HTTP 503 em     8ms  {"dependency":"convert","reason":"invalid-response"}
+  compra  4: HTTP 503 em     8ms  {"dependency":"convert","reason":"invalid-response"}
+  compra  5: HTTP 503 em     8ms  {"dependency":"convert","reason":"invalid-response"}
+  compra  6: HTTP 503 em     4ms  {"dependency":"convert","reason":"circuit-open"}
+  compra  7: HTTP 503 em     4ms  {"dependency":"convert","reason":"circuit-open"}
+  compra  8: HTTP 503 em     4ms  {"dependency":"convert","reason":"circuit-open"}
+  ok P1: todas as compras de p2a responderam antes de 5000ms
+  ok nenhuma compra deu 201 com taxa errada
+  ok todas responderam 503 do convert (invalid-response ou circuit-open)
+  ok nenhuma linha em /sales
+  ok nenhum POST /sell chegou ao AirlinesHub (nenhum assento gasto)
+  ok log do IMDTravel registrou rate.rejected
+
+== A2. P2 — /convert errado em metade das vezes (FAULT_CONVERT_P=0.5)
+  compra  1: HTTP 201 em   728ms  {"transactionId":"8e461665-7ce0-487e-b113-a4268819b55a","rate":5.5135,"valueBRL":2588.59,"degradations":[]}
+  compra  2: HTTP 503 em    19ms  {"dependency":"convert","reason":"invalid-response"}
+  compra  3: HTTP 503 em     8ms  {"dependency":"convert","reason":"invalid-response"}
+  compra  4: HTTP 201 em   493ms  {"transactionId":"47c1c8dc-1a54-43e9-9894-9e3eb63dca06","rate":5.5135,"valueBRL":2588.59,"degradations":[]}
+  compra  5: HTTP 201 em   698ms  {"transactionId":"3255e7fa-d0a2-4833-8ae1-eda5ffea8a8d","rate":5.5135,"valueBRL":2588.59,"degradations":[]}
+  compra  6: HTTP 201 em   650ms  {"transactionId":"73c1be61-81f7-41b4-b33f-98183bea6345","rate":5.5135,"valueBRL":2588.59,"degradations":[]}
+  compra  7: HTTP 201 em   877ms  {"transactionId":"f77222ad-ce2f-4685-8983-0b630071e29f","rate":5.5135,"valueBRL":2588.59,"degradations":[]}
+  compra  8: HTTP 503 em     7ms  {"dependency":"convert","reason":"invalid-response"}
+  compra  9: HTTP 503 em     7ms  {"dependency":"convert","reason":"invalid-response"}
+  compra 10: HTTP 503 em     6ms  {"dependency":"convert","reason":"invalid-response"}
+  ok P1: todas as compras de p2b responderam antes de 5000ms
+  vendas gravadas: 5 de 10 compras
+  ok toda venda gravada tem rate numérico em [5.0, 6.0]
+  ok todo valueBRL = valueUSD × rate (±0,01)
+  ok toda compra 201 devolveu rate válido ao cliente
+
+== B1/C2. P3 + P4 — Omissão no /sell (FAULT_SELL_P=1 FAULT_SELL_TTL_SEC=15)
+  compra  1: HTTP 200 em  2048ms  {"transactionId":null,"rate":5.4929,"valueBRL":2578.92,"degradations":["sell-unconfirmed"]}
+  compra  2: HTTP 200 em  2009ms  {"transactionId":null,"rate":5.4929,"valueBRL":2578.92,"degradations":["sell-unconfirmed"]}
+  compra  3: HTTP 200 em  2009ms  {"transactionId":null,"rate":5.4929,"valueBRL":2578.92,"degradations":["sell-unconfirmed"]}
+  compra  4: HTTP 200 em  2009ms  {"transactionId":null,"rate":5.4821,"valueBRL":2573.85,"degradations":["sell-unconfirmed"]}
+  compra  5: HTTP 200 em  2007ms  {"transactionId":null,"rate":5.4821,"valueBRL":2573.85,"degradations":["sell-unconfirmed"]}
+  compra  6: HTTP 503 em     8ms  {"dependency":"sell","reason":"circuit-open"}
+  compra  7: HTTP 503 em     7ms  {"dependency":"sell","reason":"circuit-open"}
+  ok P1: todas as compras de p3 responderam antes de 5000ms
+  assentos: 20 → 15 (consumidos: 5); POST /sell recebidos: 5
+  ok P3: cada cid chegou ao /sell no máximo 1 vez
+  ok P3: assentos consumidos = /sell recebidos ≤ compras
+  ok P4: nenhuma compra deu 201 (nenhuma venda foi confirmada)
+  ok P4: as compras sem resposta deram 200 com sell-unconfirmed e transactionId=null
+  ok P4: depois do breaker abrir, 503 circuit-open (nada enviado)
+  ok P4: compras incertas fora de /sales
+  ok P4: log registrou sell.unconfirmed
+
+== B2. P3 — as quatro falhas juntas
+  compra  1: HTTP 503 em  1010ms  {"dependency":"flight","reason":"timeout"}
+  compra  2: HTTP 503 em  1003ms  {"dependency":"flight","reason":"timeout"}
+  compra  3: HTTP 503 em  1006ms  {"dependency":"convert","reason":"invalid-response"}
+  compra  4: HTTP 503 em     8ms  {"dependency":"convert","reason":"invalid-response"}
+  compra  5: HTTP 200 em  2007ms  {"transactionId":null,"rate":5.4959,"valueBRL":2580.33,"degradations":["sell-unconfirmed"]}
+  compra  6: HTTP 503 em  1002ms  {"dependency":"flight","reason":"timeout"}
+  compra  7: HTTP 503 em  1002ms  {"dependency":"flight","reason":"timeout"}
+  compra  8: HTTP 503 em     1ms  {"dependency":"flight","reason":"circuit-open"}
+  compra  9: HTTP 503 em     1ms  {"dependency":"flight","reason":"circuit-open"}
+  compra 10: HTTP 503 em     1ms  {"dependency":"flight","reason":"circuit-open"}
+  ok P1: todas as compras de p3j responderam antes de 5000ms
+  assentos consumidos: 1; POST /sell recebidos: 1; compras 201: 0
+  ok P3: cada cid chegou ao /sell no máximo 1 vez
+  ok P3: assentos consumidos ≤ compras
+  ok P4: linhas em /sales = compras 201 (só venda confirmada é gravada)
+
+== C1. P4 — sem falha
+  compra  1: HTTP 201 em   993ms  {"transactionId":"567c434d-7808-4071-b80d-d8b6497095df","rate":5.4939,"valueBRL":2579.39,"degradations":[]}
+  compra  2: HTTP 201 em   472ms  {"transactionId":"025c59f4-030b-4a90-bb17-52738d6c6ea3","rate":5.4939,"valueBRL":2579.39,"degradations":[]}
+  ok P1: todas as compras de p4n responderam antes de 5000ms
+  ok 201 com degraded=false e degradations=[]
+
+== C3. P4 — Crash do Fidelity (FAULT_BONUS_P=1 FAULT_BONUS_TTL_SEC=15)
+  compra  1: HTTP 201 em  1003ms  {"transactionId":"4136953c-9b17-4339-8e92-7999c629a79c","rate":5.4879,"valueBRL":2576.57,"degradations":["bonus-deferred"]}
+  compra  2: HTTP 201 em   867ms  {"transactionId":"c9a34fef-f2bf-4951-bcea-ffc46744a8a9","rate":5.4879,"valueBRL":2576.57,"degradations":["bonus-deferred"]}
+  compra  3: HTTP 201 em   495ms  {"transactionId":"c0497530-4654-47b8-80fb-26caaf431e32","rate":5.4879,"valueBRL":2576.57,"degradations":["bonus-deferred"]}
+  ok P1: todas as compras de p4c responderam antes de 5000ms
+  ok todas 201: a venda foi confirmada, o Fidelity não derruba a compra
+  ok todas com degradations=["bonus-deferred"]
+  ok as 3 vendas estão em /sales
+
+== Resumo: 28 passaram, 0 falharam
