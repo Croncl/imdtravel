@@ -50,7 +50,8 @@ export function withBreaker<A extends unknown[], R>(
     } catch (err) {
       const code = (err as { code?: string }).code;
       if (code === 'EOPENBREAKER') {
-        throw new DependencyError(name, 'circuit-open', `${name}: circuito aberto`);
+        // Circuito aberto: a chamada nem foi feita (sent = false).
+        throw new DependencyError(name, 'circuit-open', `${name}: circuito aberto`, false);
       }
       throw err;
     }

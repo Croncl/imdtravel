@@ -13,18 +13,35 @@ const http = axios.create({
   validateStatus: () => true,
 });
 
+export type DependencyErrorReason =
+  | 'timeout'
+  | 'circuit-open'
+  | 'unavailable'
+  | 'invalid-response';
+
 // Falha técnica de uma dependência (timeout, conexão recusada, 5xx, circuito
-// aberto). O controller converte-a em 503.
+// aberto, resposta inválida). O controller converte-a em 503.
+//
+// `sent` (P4) diz se o pedido PODE ter chegado à dependência — e portanto se o
+// efeito de um POST pode ter acontecido:
+//   false → com certeza não chegou (prazo esgotado antes de enviar, conexão
+//           recusada, DNS, circuito aberto): nada aconteceu do outro lado.
+//   true  → pode ter chegado (timeout depois de enviar, conexão cortada, resposta
+//           de erro): o efeito pode ou não ter acontecido.
 export class DependencyError extends Error {
   constructor(
     readonly dependency: string,
-    readonly reason: 'timeout' | 'circuit-open' | 'unavailable',
+    readonly reason: DependencyErrorReason,
     message: string,
+    readonly sent: boolean = true,
   ) {
     super(message);
     this.name = 'DependencyError';
   }
 }
+
+// Erros de rede em que a conexão nem chegou a ser estabelecida.
+const NOT_CONNECTED = new Set(['ECONNREFUSED', 'ENOTFOUND', 'EAI_AGAIN', 'EHOSTUNREACH']);
 
 export interface CallOptions {
   method?: 'GET' | 'POST';
@@ -45,7 +62,7 @@ export async function call<T>(
   const start = Date.now();
   const budget = Math.min(timeoutMs, (deadline ?? Infinity) - start);
   if (budget <= 0) {
-    throw new DependencyError(name, 'timeout', `${name}: prazo da compra esgotado`);
+    throw new DependencyError(name, 'timeout', `${name}: prazo da compra esgotado`, false);
   }
 
   const controller = new AbortController();
@@ -61,12 +78,20 @@ export async function call<T>(
     });
   } catch (err) {
     const ms = Date.now() - start;
+    // Timeout: conservador, o pedido pode ter sido entregue (sent = true).
     if (controller.signal.aborted) {
       log(`call.${name}`, cid, ms, { error: 'timeout', budgetMs: budget });
       throw new DependencyError(name, 'timeout', `${name} excedeu ${budget}ms`);
     }
-    log(`call.${name}`, cid, ms, { error: (err as Error).message });
-    throw new DependencyError(name, 'unavailable', `${name}: ${(err as Error).message}`);
+    const code = (err as { code?: string }).code;
+    const sent = !(code && NOT_CONNECTED.has(code));
+    log(`call.${name}`, cid, ms, { error: (err as Error).message, code, sent });
+    throw new DependencyError(
+      name,
+      'unavailable',
+      `${name}: ${(err as Error).message}`,
+      sent,
+    );
   } finally {
     clearTimeout(timer);
   }
