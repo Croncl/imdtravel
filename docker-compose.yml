@@ -56,6 +56,18 @@ services:
       AIRLINESHUB_URL: http://airlineshub:8080
       EXCHANGE_URL: http://exchange:8080
       FIDELITY_URL: http://fidelity:8080
+      # Timeout (P1): prazo total da compra e limite de cada chamada
+      BUY_DEADLINE_MS: ${BUY_DEADLINE_MS:-4500}
+      HTTP_TIMEOUT_MS: ${HTTP_TIMEOUT_MS:-3500}
+      FLIGHT_TIMEOUT_MS: ${FLIGHT_TIMEOUT_MS:-1000}
+      CONVERT_TIMEOUT_MS: ${CONVERT_TIMEOUT_MS:-1000}
+      SELL_TIMEOUT_MS: ${SELL_TIMEOUT_MS:-2000}
+      BONUS_TIMEOUT_MS: ${BONUS_TIMEOUT_MS:-1000}
+      # Circuit Breaker (P7): um por endpoint (flight, convert, sell, bonus)
+      CB_VOLUME_THRESHOLD: ${CB_VOLUME_THRESHOLD:-5}
+      CB_ROLLING_WINDOW_MS: ${CB_ROLLING_WINDOW_MS:-20000}
+      CB_ERROR_THRESHOLD_PCT: ${CB_ERROR_THRESHOLD_PCT:-50}
+      CB_RESET_TIMEOUT_MS: ${CB_RESET_TIMEOUT_MS:-10000}
     ports:
       - "${IMDTRAVEL_HOST_PORT:-8080}:8080"   # a única porta exposta ao hospedeiro
     volumes:
