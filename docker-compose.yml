@@ -68,6 +68,9 @@ services:
       CB_ROLLING_WINDOW_MS: ${CB_ROLLING_WINDOW_MS:-20000}
       CB_ERROR_THRESHOLD_PCT: ${CB_ERROR_THRESHOLD_PCT:-50}
       CB_RESET_TIMEOUT_MS: ${CB_RESET_TIMEOUT_MS:-10000}
+      # Validação da taxa (P2): faixa do contrato do Exchange
+      RATE_MIN: ${RATE_MIN:-5.0}
+      RATE_MAX: ${RATE_MAX:-6.0}
     ports:
       - "${IMDTRAVEL_HOST_PORT:-8080}:8080"   # a única porta exposta ao hospedeiro
     volumes:
